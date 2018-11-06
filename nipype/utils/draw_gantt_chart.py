@@ -151,11 +151,17 @@ def calculate_resource_timeseries(events, resource):
     for _, event in sorted(events.items()):
         if event['event'] == "start":
             if resource in event and event[resource] != 'Unknown':
-                all_res += float(event[resource])
+                try:
+                    all_res += float(event[resource])
+                except:
+                    pass
             current_time = event['start']
         elif event['event'] == "finish":
             if resource in event and event[resource] != 'Unknown':
-                all_res -= float(event[resource])
+                try:
+                    all_res -= float(event[resource])
+                except:
+                    pass
             current_time = event['finish']
         res[current_time] = all_res
 
