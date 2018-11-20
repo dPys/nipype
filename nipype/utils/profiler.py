@@ -138,14 +138,20 @@ def log_nodes_cb(node, status):
     import logging
     import json
 
+    # Address nested case
+    if isinstance(node.result.runtime, (list,)):
+        resrunlist = node.result.runtime[0]
+    except:
+        resrunlist = node.result.runtime
+
     status_dict = {
         'name': node.name,
         'id': node._id,
-        'start': getattr(node.result.runtime, 'startTime'),
-        'finish': getattr(node.result.runtime, 'endTime'),
-        'duration': getattr(node.result.runtime, 'duration'),
-        'runtime_threads': getattr(node.result.runtime, 'cpu_percent', 'N/A'),
-        'runtime_memory_gb': getattr(node.result.runtime, 'mem_peak_gb',
+        'start': getattr(resrunlist, 'startTime'),
+        'finish': getattr(resrunlist, 'endTime'),
+        'duration': getattr(resrunlist, 'duration'),
+        'runtime_threads': getattr(resrunlist, 'cpu_percent', 'N/A'),
+        'runtime_memory_gb': getattr(resrunlist, 'mem_peak_gb',
                                      'N/A'),
         'estimated_memory_gb': node.mem_gb,
         'num_threads': node.n_procs,
@@ -155,8 +161,7 @@ def log_nodes_cb(node, status):
         status_dict['error'] = True
 
     # Dump string to log
-    logging.getLogger('callback').debug(json.dumps(status_dict))
-
+    logging.getLogger('callback').debug(json.dumps(status_dict, allow_nan=True))
 
 # Get total system RAM
 def get_system_total_memory_gb():
