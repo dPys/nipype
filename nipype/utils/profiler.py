@@ -110,7 +110,6 @@ class ResourceMonitor(threading.Thread):
             wait_til += self._freq
             self._event.wait(max(0, wait_til - time()))
 
-
 # Log node stats function
 def log_nodes_cb(node, status):
     """Function to record node run statistics to a log file as json
