@@ -16,12 +16,10 @@ from time import sleep, time
 from traceback import format_exception
 
 import numpy as np
-import scipy.sparse as ssp
 
 from ... import logging
-from ...utils.filemanip import loadpkl
 from ...utils.misc import str2bool
-from ..engine.utils import (nx, dfs_preorder, topological_sort)
+from ..engine.utils import topological_sort, load_resultfile
 from ..engine import MapNode
 from .tools import report_crash, report_nodes_not_run, create_pyscript
 
@@ -220,9 +218,9 @@ class DistributedPluginBase(PluginBase):
             result = {'result': None,
                       'traceback': '\n'.join(format_exception(*sys.exc_info()))}
 
+        crashfile = self._report_crash(self.procs[jobid], result=result)
         if str2bool(self._config['execution']['stop_on_first_crash']):
             raise RuntimeError("".join(result['traceback']))
-        crashfile = self._report_crash(self.procs[jobid], result=result)
         if jobid in self.mapnodesubids:
             # remove current jobid
             self.proc_pending[jobid] = False
@@ -235,6 +233,7 @@ class DistributedPluginBase(PluginBase):
         return self._remove_node_deps(jobid, crashfile, graph)
 
     def _submit_mapnode(self, jobid):
+        import scipy.sparse as ssp
         if jobid in self.mapnodes:
             return True
         self.mapnodes.append(jobid)
@@ -391,6 +390,8 @@ class DistributedPluginBase(PluginBase):
     def _generate_dependency_list(self, graph):
         """ Generates a dependency list for a list of graphs.
         """
+        import networkx as nx
+
         self.procs, _ = topological_sort(graph)
         try:
             self.depidx = nx.to_scipy_sparse_matrix(
@@ -403,6 +404,11 @@ class DistributedPluginBase(PluginBase):
         self.proc_pending = np.zeros(len(self.procs), dtype=bool)
 
     def _remove_node_deps(self, jobid, crashfile, graph):
+        import networkx as nx
+        try:
+            dfs_preorder = nx.dfs_preorder
+        except AttributeError:
+            dfs_preorder = nx.dfs_preorder_nodes
         subnodes = [s for s in dfs_preorder(graph, self.procs[jobid])]
         for node in subnodes:
             idx = self.procs.index(node)
@@ -425,7 +431,7 @@ class DistributedPluginBase(PluginBase):
                     logger.info(('[node dependencies finished] '
                                  'removing node: %s from directory %s') %
                                 (self.procs[idx]._id, outdir))
-                    shutil.rmtree(outdir)
+                    shutil.rmtree(outdir, ignore_errors=True)
 
 
 class SGELikeBatchManagerBase(DistributedPluginBase):
@@ -497,7 +503,7 @@ class SGELikeBatchManagerBase(DistributedPluginBase):
                 result_data['traceback'] = '\n'.join(format_exception(*sys.exc_info()))
         else:
             results_file = glob(os.path.join(node_dir, 'result_*.pklz'))[0]
-            result_data = loadpkl(results_file)
+            result_data = load_resultfile(results_file)
         result_out = dict(result=None, traceback=None)
         if isinstance(result_data, dict):
             result_out['result'] = result_data['result']
@@ -538,6 +544,7 @@ class GraphPluginBase(PluginBase):
         super(GraphPluginBase, self).__init__(plugin_args=plugin_args)
 
     def run(self, graph, config, updatehash=False):
+        import networkx as nx
         pyfiles = []
         dependencies = {}
         self._config = config
@@ -594,7 +601,7 @@ class GraphPluginBase(PluginBase):
         glob(os.path.join(node_dir, 'result_*.pklz')).pop()
 
         results_file = glob(os.path.join(node_dir, 'result_*.pklz'))[0]
-        result_data = loadpkl(results_file)
+        result_data = load_resultfile(results_file)
         result_out = dict(result=None, traceback=None)
 
         if isinstance(result_data, dict):
