@@ -3,10 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Miscellaneous utility functions
 """
-from __future__ import (print_function, unicode_literals, division,
-                        absolute_import)
-from builtins import next, str
-
 import os
 import sys
 import re
@@ -16,8 +12,7 @@ from warnings import warn
 from distutils.version import LooseVersion
 
 import numpy as np
-from future.utils import raise_from
-from future import standard_library
+
 try:
     from textwrap import indent as textwrap_indent
 except ImportError:
@@ -30,9 +25,6 @@ except ImportError:
         return prefix + prefix.join(splittext)
 
 
-standard_library.install_aliases()
-
-
 def human_order_sorted(l):
     """Sorts string in human order (i.e. 'stat10' will go after 'stat2')"""
 
@@ -42,17 +34,17 @@ def human_order_sorted(l):
     def natural_keys(text):
         if isinstance(text, tuple):
             text = text[0]
-        return [atoi(c) for c in re.split('(\d+)', text)]
+        return [atoi(c) for c in re.split("(\d+)", text)]
 
     return sorted(l, key=natural_keys)
 
 
 def trim(docstring, marker=None):
     if isinstance(docstring, bytes):
-        docstring = str(docstring, 'utf-8')
+        docstring = str(docstring, "utf-8")
 
     if not docstring:
-        return ''
+        return ""
     # Convert tabs to spaces (following the normal Python rules)
     # and split into a list of lines:
     lines = docstring.expandtabs().splitlines()
@@ -68,9 +60,12 @@ def trim(docstring, marker=None):
         for line in lines[1:]:
             # replace existing REST marker with doc level marker
             stripped = line.lstrip().strip().rstrip()
-            if marker is not None and stripped and \
-               all([s == stripped[0] for s in stripped]) and \
-               stripped[0] not in [':']:
+            if (
+                marker is not None
+                and stripped
+                and all([s == stripped[0] for s in stripped])
+                and stripped[0] not in [":"]
+            ):
                 line = line.replace(stripped[0], marker)
             trimmed.append(line[indent:].rstrip())
     # Strip off trailing and leading blank lines:
@@ -79,12 +74,12 @@ def trim(docstring, marker=None):
     while trimmed and not trimmed[0]:
         trimmed.pop(0)
     # Return a single string:
-    return '\n'.join(trimmed)
+    return "\n".join(trimmed)
 
 
 def find_indices(condition):
     "Return the indices where ravel(condition) is true"
-    res, = np.nonzero(np.ravel(condition))
+    (res,) = np.nonzero(np.ravel(condition))
     return res
 
 
@@ -104,7 +99,7 @@ def is_container(item):
     """
     if isinstance(item, str):
         return False
-    elif hasattr(item, '__iter__'):
+    elif hasattr(item, "__iter__"):
         return True
     else:
         return False
@@ -130,19 +125,21 @@ def container_to_string(cont):
         Container elements joined into a string.
 
     """
-    if hasattr(cont, '__iter__') and not isinstance(cont, str):
-        cont = ' '.join(cont)
+    if hasattr(cont, "__iter__") and not isinstance(cont, str):
+        cont = " ".join(cont)
     return str(cont)
 
 
 # Dependency checks.  Copied this from Nipy, with some modificiations
 # (added app as a parameter).
-def package_check(pkg_name,
-                  version=None,
-                  app=None,
-                  checker=LooseVersion,
-                  exc_failed_import=ImportError,
-                  exc_failed_check=RuntimeError):
+def package_check(
+    pkg_name,
+    version=None,
+    app=None,
+    checker=LooseVersion,
+    exc_failed_import=ImportError,
+    exc_failed_check=RuntimeError,
+):
     """Check that the minimal version of the required package is installed.
 
     Parameters
@@ -171,36 +168,77 @@ def package_check(pkg_name,
     """
 
     if app:
-        msg = '%s requires %s' % (app, pkg_name)
+        msg = "%s requires %s" % (app, pkg_name)
     else:
-        msg = 'Nipype requires %s' % pkg_name
+        msg = "Nipype requires %s" % pkg_name
     if version:
-        msg += ' with version >= %s' % (version, )
+        msg += " with version >= %s" % (version,)
     try:
         mod = __import__(pkg_name)
     except ImportError as e:
-        raise_from(exc_failed_import(msg), e)
+        raise exc_failed_import(msg) from e
     if not version:
         return
     try:
         have_version = mod.__version__
     except AttributeError as e:
-        raise_from(
-            exc_failed_check('Cannot find version for %s' % pkg_name), e)
+        raise exc_failed_check("Cannot find version for %s" % pkg_name) from e
     if checker(have_version) < checker(version):
         raise exc_failed_check(msg)
 
 
 def str2bool(v):
+    """
+    Convert strings (and bytearrays) to boolean values
+
+    >>> all([str2bool(v) for v in (True, "yes", "true",
+    ...      "y", "t", "Yes", "True", "1", "on", "On")])
+    True
+    >>> all([str2bool(v.encode('utf-8'))
+    ...      for v in ("yes", "true", "y", "t", "1", "Yes", "on", "On")])
+    True
+    >>> any([str2bool(v) for v in (False, "no", "false", "n", "f",
+    ...      "False", "0", "off", "Off")])
+    False
+    >>> any([str2bool(v.encode('utf-8'))
+    ...      for v in ("no", "false", "n", "f", "0", "off", "Off")])
+    False
+    >>> str2bool(None)  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: ...
+    >>> str2bool('/some/path')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: ...
+    >>> str2bool('Agg')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: ...
+    >>> str2bool('INFO')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: ...
+    >>> str2bool('/some/bytes/path'.encode('utf-8'))  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: ...
+
+    """
     if isinstance(v, bool):
         return v
-    lower = v.lower()
-    if lower in ("yes", "true", "t", "1"):
-        return True
-    elif lower in ("no", "false", "n", "f", "0"):
-        return False
-    else:
-        raise ValueError("%s cannot be converted to bool" % v)
+
+    if isinstance(v, bytes):
+        v = v.decode("utf-8")
+
+    if isinstance(v, str):
+        lower = v.lower()
+        if lower in ("yes", "true", "y", "t", "1", "on"):
+            return True
+        elif lower in ("no", "false", "n", "f", "0", "off"):
+            return False
+
+    raise ValueError("%r cannot be converted to bool" % v)
 
 
 def flatten(S):
@@ -236,13 +274,14 @@ def normalize_mc_params(params, source):
         ry  Roll                (rad)
         rz  Yaw                 (rad)
     """
-    if source.upper() == 'FSL':
+    if source.upper() == "FSL":
         params = params[[3, 4, 5, 0, 1, 2]]
-    elif source.upper() in ('AFNI', 'FSFAST'):
+    elif source.upper() in ("AFNI", "FSFAST"):
         params = params[np.asarray([4, 5, 3, 1, 2, 0]) + (len(params) > 6)]
-        params[3:] = params[3:] * np.pi / 180.
-    elif source.upper() == 'NIPY':
+        params[3:] = params[3:] * np.pi / 180.0
+    elif source.upper() == "NIPY":
         from nipy.algorithms.registration import to_matrix44, aff2euler
+
         matrix = to_matrix44(params)
         params = np.zeros(6)
         params[:3] = matrix[:3, 3]
@@ -301,7 +340,7 @@ def dict_diff(dold, dnew, indent=0):
     if len(diff) > diffkeys:
         diff.insert(diffkeys, "Some dictionary entries had differing values:")
 
-    return textwrap_indent('\n'.join(diff), ' ' * indent)
+    return textwrap_indent("\n".join(diff), " " * indent)
 
 
 def rgetcwd(error=True):
@@ -317,10 +356,14 @@ def rgetcwd(error=True):
     except OSError as exc:
         # Changing back to cwd is probably not necessary
         # but this makes sure there's somewhere to change to.
-        cwd = os.getenv('PWD')
+        cwd = os.getenv("PWD")
         if cwd is None:
-            raise OSError((
-                exc.errno, 'Current directory does not exist anymore, '
-                'and nipype was not able to guess it from the environment'))
+            raise OSError(
+                (
+                    exc.errno,
+                    "Current directory does not exist anymore, "
+                    "and nipype was not able to guess it from the environment",
+                )
+            )
         warn('Current folder does not exist, replacing with "%s" instead.' % cwd)
     return cwd

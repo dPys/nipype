@@ -11,8 +11,8 @@ NIPYPE: Neuroimaging in Python: Pipelines and Interfaces
 .. image:: https://codecov.io/gh/nipy/nipype/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/nipy/nipype
 
-.. image:: https://www.codacy.com/project/badge/182f27944c51474490b369d0a23e2f32
-  :target: https://www.codacy.com/app/krzysztof-gorgolewski/nipy_nipype
+.. image:: https://api.codacy.com/project/badge/Grade/452bfc0d4de342c99b177d2c29abda7b
+  :target: https://www.codacy.com/app/nipype/nipype?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=nipy/nipype&amp;utm_campaign=Badge_Grade
 
 .. image:: https://img.shields.io/pypi/v/nipype.svg
     :target: https://pypi.python.org/pypi/nipype/
@@ -34,8 +34,9 @@ NIPYPE: Neuroimaging in Python: Pipelines and Interfaces
     :target: http://gitter.im/nipy/nipype
     :alt: Chat
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.581704.svg
-   :target: https://doi.org/10.5281/zenodo.581704
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.596855.svg
+   :target: https://doi.org/10.5281/zenodo.596855
+   :alt: Citable DOI
 
 Current neuroimaging software offer users an incredible opportunity to
 analyze data using a variety of different algorithms. However, this has
@@ -76,6 +77,24 @@ Information specific to Nipype is located here::
 
     http://nipy.org/nipype
 
+Python 2 Statement
+------------------
+
+Python 2.7 reaches its end-of-life in January 2020, which means it will
+*no longer be maintained* by Python developers. `Many projects
+<https://python3statement.org/`__ are removing support in advance of this
+deadline, which will make it increasingly untenable to try to support
+Python 2, even if we wanted to.
+
+The final series with 2.7 support is 1.3.x. If you have a package using
+Python 2 and are unable or unwilling to upgrade to Python 3, then you
+should use the following `dependency
+<https://www.python.org/dev/peps/pep-0440/#version-specifiers>`__ for
+Nipype::
+
+    nipype<1.4
+
+Bug fixes will be accepted against the ``maint/1.3.x`` branch.
 
 Support and Communication
 -------------------------
@@ -90,7 +109,7 @@ To participate in the Nipype development related discussions please use the foll
 
 Please add *[nipype]* to the subject line when posting on the mailing list.
 
-You can even hangout with the Nipype developers in their 
+You can even hangout with the Nipype developers in their
 `Gitter <https://gitter.im/nipy/nipype>`_ channel or in the BrainHack `Slack <https://brainhack.slack.com/messages/C1FR76RAL>`_ channel. (Click `here <https://brainhack-slack-invite.herokuapp.com>`_ to join the Slack workspace.)
 
 
